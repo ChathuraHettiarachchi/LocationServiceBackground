@@ -1,4 +1,4 @@
-package com.chootdev.myapplication;
+package com.chootdev.myapplication.services;
 
 import android.app.Service;
 import android.content.Context;
@@ -13,6 +13,15 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
+import com.chootdev.myapplication.events.LocationEvent;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import de.greenrobot.event.EventBus;
+
+import static com.google.android.gms.analytics.internal.zzy.e;
+
 /**
  * Created by Choota on 1/25/18.
  */
@@ -24,9 +33,12 @@ public class LocationManagerService extends Service implements Runnable {
     private Location mLastLocation;
     private boolean isNotified;
 
+    private Location oldLocatoin, newLocation;
+
+    private static boolean isServiceRuning;
     private static final String TAG = "MyLocationService";
-    private static final int LOCATION_INTERVAL = 5 * 1000;
-    private static final float LOCATION_DISTANCE = 10f;
+    private static final int LOCATION_INTERVAL = 500;
+    private static final float LOCATION_DISTANCE = 50f;
 
     private LocationListener[] mLocationListeners = new LocationListener[]{
             new LocationListener(LocationManager.PASSIVE_PROVIDER),
@@ -41,6 +53,8 @@ public class LocationManagerService extends Service implements Runnable {
         handler = new Handler();
         this.isNotified = false;
         this.run();
+
+        isServiceRuning = true;
 
         initializeLocationManager();
 
@@ -71,6 +85,20 @@ public class LocationManagerService extends Service implements Runnable {
 
     public void stopRepeatingTask() {
         handler.removeCallbacks(this);
+    }
+
+    public String getCurrentTimeStamp() {
+        try {
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String currentDateTime = dateFormat.format(new Date()); // Find todays date
+
+            return currentDateTime;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return null;
+        }
     }
 
     private class LocationListener implements android.location.LocationListener {
@@ -113,6 +141,7 @@ public class LocationManagerService extends Service implements Runnable {
     @Override
     public void onDestroy() {
         Log.e(TAG, "onDestroy");
+        isServiceRuning = false;
         stopRepeatingTask();
         super.onDestroy();
 
@@ -140,8 +169,28 @@ public class LocationManagerService extends Service implements Runnable {
     public void run() {
         try {
             if (getLastLocation() != null && !isNotified) {
+
                 this.isNotified = true;
+
                 System.out.println(getLastLocation());
+                String disteneBetween = "0.0";
+
+                if (newLocation != null)
+                    this.oldLocatoin = new Location(this.newLocation);
+
+                this.newLocation = new Location(getLastLocation());
+
+                if (oldLocatoin != null) {
+                    disteneBetween = String.valueOf(oldLocatoin.distanceTo(newLocation));
+
+                    String lat = String.valueOf(getLastLocation().getLatitude());
+                    String lan = String.valueOf(getLastLocation().getLongitude());
+
+                    LocationEvent event = new LocationEvent(getCurrentTimeStamp(), lat, lan, disteneBetween);
+                    event.save();
+
+                    EventBus.getDefault().post(event);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
