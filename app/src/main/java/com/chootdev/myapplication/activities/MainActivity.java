@@ -1,4 +1,4 @@
-package com.chootdev.myapplication;
+package com.chootdev.myapplication.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,7 +9,11 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.chootdev.myapplication.services.LocationManagerService;
+import com.chootdev.myapplication.R;
 import com.chootdev.myapplication.events.LocationEvent;
+
+import java.util.List;
 
 import de.greenrobot.event.EventBus;
 
@@ -41,6 +45,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         scrollView = (ScrollView) findViewById(R.id.scrollView);
     }
 
+    private void populateFromDB(){
+        try{
+            List<LocationEvent> events = LocationEvent.listAll(LocationEvent.class);
+            if (events != null && events.size() > 0){
+                tvMessage.setText("");
+                for (LocationEvent event : events) {
+                    String currentText = tvMessage.getText().toString();
+                    String newText = (currentText + "\n\n" + event.getTimeStamp() +
+                            "\nLat : " + event.getLat() + " | Lon : " + event.getLan() +
+                            "\nDistence to : " + event.getDistence());
+
+                    tvMessage.setText(newText);
+                }
+            }
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
     public void onEvent(LocationEvent location) {
         String currentText = tvMessage.getText().toString();
         String newText = (currentText + "\n\n" + location.getTimeStamp() +
@@ -61,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onResume() {
         super.onResume();
         EventBus.getDefault().register(this);
+        populateFromDB();
     }
 
     @Override
@@ -74,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btnStart:
 
+                LocationEvent.deleteAll(LocationEvent.class);
                 tvMessage.setText("Starting service...");
 
                 new Handler().postDelayed(new Runnable() {
@@ -93,13 +118,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btnClear:
                 tvMessage.setText("");
-                // clear db
+                LocationEvent.deleteAll(LocationEvent.class);
                 break;
             case R.id.btnEnd:
                 stopService(new Intent(getApplicationContext(), LocationManagerService.class));
                 break;
             case R.id.btnReload:
-                // reload table data to view
+                populateFromDB();
                 break;
         }
     }

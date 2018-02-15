@@ -37,8 +37,8 @@ public class LocationManagerService extends Service implements Runnable {
 
     private static boolean isServiceRuning;
     private static final String TAG = "MyLocationService";
-    private static final int LOCATION_INTERVAL = 500;
-    private static final float LOCATION_DISTANCE = 50f;
+    private static final int LOCATION_INTERVAL = 1000;
+    private static final float LOCATION_DISTANCE = 500f;
 
     private LocationListener[] mLocationListeners = new LocationListener[]{
             new LocationListener(LocationManager.PASSIVE_PROVIDER),
