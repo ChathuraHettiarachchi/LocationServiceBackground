@@ -20,8 +20,6 @@ import java.util.Date;
 
 import de.greenrobot.event.EventBus;
 
-import static com.google.android.gms.analytics.internal.zzy.e;
-
 /**
  * Created by Choota on 1/25/18.
  */
@@ -38,7 +36,7 @@ public class LocationManagerService extends Service implements Runnable {
     private static boolean isServiceRuning;
     private static final String TAG = "MyLocationService";
     private static final int LOCATION_INTERVAL = 1000;
-    private static final float LOCATION_DISTANCE = 500f;
+    private static final float LOCATION_DISTANCE = 10f;
 
     private LocationListener[] mLocationListeners = new LocationListener[]{
             new LocationListener(LocationManager.PASSIVE_PROVIDER),
